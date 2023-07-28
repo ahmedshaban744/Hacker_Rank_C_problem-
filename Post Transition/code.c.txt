@@ -1,0 +1,41 @@
+void send_all_acceptable_packages(town* source, int source_office_index, town* target, int target_office_index) {
+    post_office* source_office = &(source->offices[source_office_index]);
+    post_office* target_office = &(target->offices[target_office_index]);
+
+    int sent_count = 0;
+    for (int i = 0; i < source_office->packages_count; i++) {
+        if (source_office->packages[i].weight >= target_office->min_weight && source_office->packages[i].weight <= target_office->max_weight) {
+            sent_count++;
+        }
+    }
+
+    package* sent_packages = malloc(sent_count * sizeof(package));
+    int sent_packages_index = 0;
+
+    for (int i = 0; i < source_office->packages_count; i++) {
+        if (source_office->packages[i].weight >= target_office->min_weight && source_office->packages[i].weight <= target_office->max_weight) {
+            sent_packages[sent_packages_index++] = source_office->packages[i];
+        }
+    }
+
+    target_office->packages = realloc(target_office->packages, (target_office->packages_count + sent_count) * sizeof(package));
+    memcpy(target_office->packages + target_office->packages_count, sent_packages, sent_count * sizeof(package));
+    target_office->packages_count += sent_count;
+
+    // Remove sent packages from the source office
+    int remaining_packages_count = source_office->packages_count - sent_count;
+    package* remaining_packages = malloc(remaining_packages_count * sizeof(package));
+    int remaining_packages_index = 0;
+
+    for (int i = 0; i < source_office->packages_count; i++) {
+        if (!(source_office->packages[i].weight >= target_office->min_weight && source_office->packages[i].weight <= target_office->max_weight)) {
+            remaining_packages[remaining_packages_index++] = source_office->packages[i];
+        }
+    }
+
+    free(source_office->packages);
+    source_office->packages = remaining_packages;
+    source_office->packages_count = remaining_packages_count;
+
+    free(sent_packages);
+}
